@@ -1,4 +1,5 @@
 import re
+import time
 from app.utils import safe_exec
 import streamlit as st
 import pandas as pd
@@ -6,25 +7,19 @@ import pandas as pd
 
 @safe_exec
 def dist_viz(viz_col, log):
-    """Displays bar chart for categorical distribution."""
-    if viz_col in log.columns:
-        st.write(f"### 📊 {viz_col} Distribution")
+    """Displays bar chart for activity or resource distribution."""
+    
+    # st.write(f"#### {viz_col.capitalize()} Distribution")
+    activity_counts = log[viz_col].value_counts().reset_index()
+    if ":" in viz_col:
+        viz_col = viz_col.replace(":", " ")
 
-        # Drop NaNs and check if there's any data left
-        value_counts = log[viz_col].dropna().value_counts().reset_index()
-        value_counts.columns = [viz_col, "Count"]
+    # st.write(f"#### {viz_col.capitalize()} Distribution")
 
-        if value_counts.empty:
-            st.warning(f"No valid data available for {viz_col}.")
-            return
-
-        # Ensure categories are properly sorted
-        value_counts = value_counts.sort_values(by="Count", ascending=False)
-        value_counts[viz_col] = pd.Categorical(value_counts[viz_col], categories=value_counts[viz_col], ordered=True)
-
-        st.bar_chart(value_counts.set_index(viz_col))
-    else:
-        st.warning(f"Column {viz_col} does not exist in the dataset.")
+    activity_counts.columns = [viz_col, "Count"]
+    
+    activity_counts = activity_counts.sort_values(by="Count", ascending=False)
+    st.bar_chart(activity_counts.set_index(viz_col))
 
 
 def render_preview(filtered_log, case_col):
@@ -73,28 +68,28 @@ def render_distributions(filtered_log, column_map):
     
     resource_col = column_map.get("resource")
     activity_col = column_map.get("activity")
+    timestamp_col = column_map.get("timestamp")
+    case_col = column_map.get("case_id")
     
-    st.write("### 🔄 Distribution")
+    st.write("### 🔄 Distributions")
 
     # Ensure columns exist before visualizing
     has_activities = activity_col in filtered_log.columns
     has_resources = resource_col and resource_col in filtered_log.columns
 
-    if has_resources:
-        activities, resources = st.tabs(["Activities", "Resources"])
-    else:
-        activities = st.empty()
+    columns = [
+        col for col in filtered_log.columns if col not in [activity_col, resource_col, timestamp_col, case_col]
+    ]
 
-    if has_activities:
-        with activities:
-            dist_viz(activity_col, filtered_log)
+    columns.append(activity_col) if has_activities else None
+    columns.append(resource_col) if has_resources else None
 
-    if has_resources:
-        with resources:
-            dist_viz(resource_col, filtered_log)
-    elif not has_activities:
-        st.warning("No valid activity or resource column found for visualization.")
 
+    dist_tabs = st.tabs(columns)
+    for col, tab in zip(columns, dist_tabs):
+        if col:
+            with tab:
+                dist_viz(col, filtered_log)
 
 def overview(filtered_log, column_map):
     """Generates the overview section, including preview, statistics, and distributions."""
@@ -104,7 +99,7 @@ def overview(filtered_log, column_map):
     timestamp_col = column_map["timestamp"]
     resource_col = column_map["resource"]
     
-    preview_section, stats_section, viz_section = st.columns([5, 2, 3])
+    preview_section, stats_section, viz_section = st.columns([4, 2, 3])
 
     with preview_section:
         render_preview(filtered_log, case_col)
