@@ -9,12 +9,9 @@ import pandas as pd
 def dist_viz(viz_col, log):
     """Displays bar chart for activity or resource distribution."""
     
-    # st.write(f"#### {viz_col.capitalize()} Distribution")
     activity_counts = log[viz_col].value_counts().reset_index()
     if ":" in viz_col:
         viz_col = viz_col.replace(":", " ")
-
-    # st.write(f"#### {viz_col.capitalize()} Distribution")
 
     activity_counts.columns = [viz_col, "Count"]
     
@@ -24,7 +21,7 @@ def dist_viz(viz_col, log):
 
 def render_preview(filtered_log, case_col):
     """Displays a preview of the filtered log."""
-    st.write("### 🔍 Preview of Log")
+    st.write("### 🔍 Log View")
 
     if case_col in filtered_log.columns:
         st.dataframe(filtered_log.set_index(case_col))
@@ -53,10 +50,13 @@ def render_statistics(filtered_log, case_col, activity_col, timestamp_col, resou
             str((temp_log.groupby(case_col)[timestamp_col].max() - temp_log.groupby(case_col)[timestamp_col].min()).mean())  # Convert to string
         ]
 
-    if resource_col and filtered_log[resource_col].notna().sum() > 0:
+    if resource_col in filtered_log.columns and filtered_log[resource_col].notna().sum() > 0:
         top_resource = filtered_log[resource_col].value_counts().idxmax()
         stats_dict["Metric"].append("Top Resource")
         stats_dict["Value"].append(str(top_resource))
+    else:
+        stats_dict["Metric"].append("Top Resource")
+        stats_dict["Value"].append("N/A")
 
     stats_df = pd.DataFrame(stats_dict).set_index("Metric")
     st.dataframe(stats_df)

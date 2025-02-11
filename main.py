@@ -1,3 +1,4 @@
+from numpy import select
 import streamlit as st
 from app.utils import detect_columns, load_log
 from app.components.sidebar_filter import sidebar_filter, apply_filters
@@ -27,10 +28,10 @@ def app():
             return
 
         # Render sidebar filters
-        start_event, end_event, selected_resources, selected_activities = sidebar_filter(log, activity_col, resource_col)
-        filtered_log = apply_filters(log, case_col, activity_col, resource_col, start_event, end_event, selected_resources, selected_activities)
+        start_event, end_event, selected_resources, selected_activities, selected_columns = sidebar_filter(log, column_map)
 
         # Apply filters
+        filtered_log = apply_filters(log, case_col, activity_col, resource_col, start_event, end_event, selected_resources, selected_activities)[selected_columns]
 
         # Layout: Preview, Statistics, Distributions
         with overview_tab:
