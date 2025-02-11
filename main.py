@@ -1,8 +1,8 @@
-from numpy import select
 import streamlit as st
 from app.utils import detect_columns, load_log
 from app.components.sidebar_filter import sidebar_filter, apply_filters
 from app.components.overview import overview
+from app.components.variants_explorer import variants_explorer
 
 def app():
     """Main application logic."""
@@ -17,7 +17,7 @@ def app():
             st.error("Invalid file format. Please upload a valid CSV or XES file.")
             return
 
-        overview_tab, dfg_tab, inductive_tab = st.tabs(["Overview", "Directly-Follows Graph", "Inductive Miner"])
+        overview_tab, variants_tab ,dfg_tab, inductive_tab = st.tabs(["Overview", "Variants Explorer" ,"Directly-Follows Graph", "Inductive Miner"])
         column_map = detect_columns(log)
         case_col, activity_col, timestamp_col, resource_col = (
             column_map["case_id"], column_map["activity"], column_map["timestamp"], column_map["resource"]
@@ -36,6 +36,9 @@ def app():
         # Layout: Preview, Statistics, Distributions
         with overview_tab:
             overview(filtered_log, column_map)
+
+        with variants_tab:
+            variants_explorer(filtered_log)
 
         with dfg_tab:
             st.write("### Directly-Follows Graph")
